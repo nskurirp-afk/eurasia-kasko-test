@@ -273,36 +273,123 @@ function selectDoc(d){
  q('docChallenge').textContent='Снимите: '+d.title+'. Держите объект ровно, крупно и без бликов.';
  q('docCaptureBtn').disabled=false;q('ocrBox').textContent='OCR: ожидается снимок';
 }
-async function ocrCanvas(c){
+function cropCanvas(c,x,y,w,h){
+ var out=document.createElement('canvas');
+ out.width=Math.max(1,Math.round(c.width*w));
+ out.height=Math.max(1,Math.round(c.height*h));
+ out.getContext('2d').drawImage(
+   c,
+   Math.round(c.width*x),Math.round(c.height*y),
+   Math.round(c.width*w),Math.round(c.height*h),
+   0,0,out.width,out.height
+ );
+ return out;
+}
+function preprocessCanvas(c,scale){
+ var out=document.createElement('canvas');
+ out.width=Math.round(c.width*(scale||2));
+ out.height=Math.round(c.height*(scale||2));
+ var x=out.getContext('2d',{willReadFrequently:true});
+ x.drawImage(c,0,0,out.width,out.height);
+ var im=x.getImageData(0,0,out.width,out.height),d=im.data;
+ for(var i=0;i<d.length;i+=4){
+   var g=.299*d[i]+.587*d[i+1]+.114*d[i+2];
+   var v=g>155?255:g<95?0:Math.round((g-95)*255/60);
+   d[i]=d[i+1]=d[i+2]=v;
+ }
+ x.putImageData(im,0,0);
+ return out;
+}
+async function ocrCanvas(c,whitelist){
  try{
-  var r=await Tesseract.recognize(c,'eng',{logger:m=>{if(m.status==='recognizing text')q('ocrBox').textContent='OCR '+Math.round((m.progress||0)*100)+'%'}});
+  var opts={logger:m=>{if(m.status==='recognizing text')q('ocrBox').textContent='OCR '+Math.round((m.progress||0)*100)+'%'}};
+  if(whitelist) opts.tessedit_char_whitelist=whitelist;
+  var r=await Tesseract.recognize(c,'eng',opts);
   return {text:(r.data.text||'').toUpperCase().replace(/\s+/g,' ').trim(),confidence:r.data.confidence||0};
  }catch(e){return {text:'',confidence:0,error:String(e)}}
 }
 function extract(text,mode){
  var clean=norm(text);
- if(mode==='vin'){var m=clean.match(/[A-HJ-NPR-Z0-9]{17}/);return m?m[0]:''}
- if(mode==='plate'){var p=clean.match(/\d{3}[A-Z]{2,3}\d{2}/);return p?p[0]:''}
- if(mode==='odo'){var nums=text.match(/\b\d{3,7}\b/g);return nums&&nums.length?nums.sort((a,b)=>b.length-a.length)[0]:''}
- return ''
+ if(mode==='vin'){
+   var all=clean.match(/[A-HJ-NPR-Z0-9]{15,19}/g)||[];
+   all=all.map(s=>s.replace(/[IOQ]/g,'')).filter(s=>s.length>=17);
+   return all.length?all.sort((a,b)=>Math.abs(a.length-17)-Math.abs(b.length-17))[0].slice(0,17):'';
+ }
+ if(mode==='plate'){
+   var p=clean.match(/\d{3}[A-Z]{2,3}\d{2}/);
+   return p?p[0]:'';
+ }
+ if(mode==='odo'){
+   var nums=text.match(/\b\d{3,7}\b/g);
+   return nums&&nums.length?nums.sort((a,b)=>b.length-a.length)[0]:'';
+ }
+ return '';
+}
+async function readSrtsFields(c){
+ // KZ СРТС: тестовая разметка по фото карточки. В боевой версии зоны должны
+ // калиброваться по шаблону документа/детектору углов.
+ var plateCrop=preprocessCanvas(cropCanvas(c,.05,.22,.42,.17),2.4);
+ var vinCrop=preprocessCanvas(cropCanvas(c,.42,.72,.52,.18),2.4);
+ var modelCrop=preprocessCanvas(cropCanvas(c,.32,.20,.62,.24),2.0);
+
+ var plateO=await ocrCanvas(plateCrop,'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+ var vinO=await ocrCanvas(vinCrop,'ABCDEFGHJKLMNPRSTUVWXYZ0123456789');
+ var modelO=await ocrCanvas(modelCrop);
+
+ return {
+   plate:extract(plateO.text,'plate'),
+   vin:extract(vinO.text,'vin'),
+   modelText:modelO.text,
+   debug:{plateText:plateO.text,vinText:vinO.text,modelText:modelO.text}
+ };
 }
 async function captureDoc(){
  if(!currentDoc)return;
  q('docCaptureBtn').disabled=true;q('docStatus').className='camStatus warn';q('docStatus').textContent='Проверяем…';
  var c=grab(q('docVideo')),light=luminance(c);
  if(light<35||light>225){q('docStatus').className='camStatus bad';q('docStatus').textContent='Проблема с освещением. Переснимите.';q('docCaptureBtn').disabled=false;return}
- var o={text:'',confidence:0},found='',match=true;
- if(['vin','plate','odo','doc'].includes(currentDoc.mode))o=await ocrCanvas(c);
- if(currentDoc.mode==='vin'){found=extract(o.text,'vin');match=!!found && found===norm(q('expectedVin').value)}
- if(currentDoc.mode==='plate'){found=extract(o.text,'plate');match=!!found && found===norm(q('expectedPlate').value)}
- if(currentDoc.mode==='odo'){found=extract(o.text,'odo');var e=q('expectedOdo').value.replace(/\D/g,'');match=!e||(!isNaN(+found)&&Math.abs(+found-+e)<=1000)}
- if(currentDoc.mode==='doc'){var ev=norm(q('expectedVin').value),ep=norm(q('expectedPlate').value);match=(ev&&norm(o.text).includes(ev))||(ep&&norm(o.text).includes(ep))||o.confidence>35}
+ var o={text:'',confidence:0},found='',match=true,srts=null;
+ if(currentDoc.mode==='vin'){
+   o=await ocrCanvas(preprocessCanvas(c,2.2),'ABCDEFGHJKLMNPRSTUVWXYZ0123456789');
+   found=extract(o.text,'vin');
+   match=!!found && found===norm(q('expectedVin').value);
+ }
+ if(currentDoc.mode==='plate'){
+   o=await ocrCanvas(preprocessCanvas(c,2.2),'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+   found=extract(o.text,'plate');
+   match=!!found && found===norm(q('expectedPlate').value);
+ }
+ if(currentDoc.mode==='odo'){
+   o=await ocrCanvas(preprocessCanvas(c,2.0),'0123456789');
+   found=extract(o.text,'odo');
+   var e=q('expectedOdo').value.replace(/\D/g,'');
+   match=!e||(!isNaN(+found)&&Math.abs(+found-+e)<=1000);
+ }
+ if(currentDoc.mode==='doc'){
+   srts=await readSrtsFields(c);
+   var ev=norm(q('expectedVin').value),ep=norm(q('expectedPlate').value);
+   var vinMatch=!!srts.vin && srts.vin===ev;
+   var plateMatch=!!srts.plate && srts.plate===ep;
+   match=vinMatch||plateMatch;
+   found='VIN: '+(srts.vin||'не найден')+' | ГРНЗ: '+(srts.plate||'не найден');
+   o.text='VIN zone: '+srts.debug.vinText+' | PLATE zone: '+srts.debug.plateText+' | MODEL zone: '+srts.debug.modelText;
+   o.confidence=match?85:35;
+ }
  var url=c.toDataURL('image/jpeg',.82);
- docs[currentDoc.id]={image:url,text:o.text,found,match,confidence:o.confidence};
+ docs[currentDoc.id]={image:url,text:o.text,found,match,confidence:o.confidence,srts:srts};
  var task=q('task_'+currentDoc.id);
  if(match){task.className='task done';task.querySelector('span').textContent='✓ Принято'+(found?' · '+found:'');q('docStatus').className='camStatus ok';q('docStatus').textContent='✓ Сверка пройдена.'}
  else{task.className='task review';task.querySelector('span').textContent='⚠ Требуется проверка'+(found?' · '+found:'');q('docStatus').className='camStatus warn';q('docStatus').textContent='Данные не подтверждены автоматически. Кейс будет отмечен для специалиста.';addReason(currentDoc.title+': автоматическая сверка не пройдена')}
- q('ocrBox').textContent='OCR ('+Math.round(o.confidence)+'%): '+(o.text||'нет уверенного текста');
+ if(currentDoc.mode==='doc' && srts){
+   q('ocrBox').innerHTML=
+     '<b>Распознано по зонам СРТС:</b><br>'+
+     'ГРНЗ: '+(srts.plate||'не найден')+'<br>'+
+     'VIN: '+(srts.vin||'не найден')+'<br>'+
+     'Марка/модель: '+(srts.modelText||'не распознано')+'<br><br>'+
+     '<span style="opacity:.7">Сверка с заявкой: '+(match?'СОВПАДЕНИЕ':'ТРЕБУЕТ ПРОВЕРКИ')+'</span>';
+ }else{
+   q('ocrBox').textContent='OCR ('+Math.round(o.confidence)+'%): '+(o.text||'нет уверенного текста');
+ }
  q('docCaptureBtn').disabled=false;
  q('docsNext').disabled=docDefs.some(d=>!docs[d.id]);
 }
