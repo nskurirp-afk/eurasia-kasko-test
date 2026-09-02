@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0d2633">
+<title>Евразия — LIVE фотоосмотр</title>
+<style>
+:root{--bg:#eef7fa;--card:#fff;--ink:#15384e;--muted:#718793;--line:#d8e7ee;--blue:#22619c;--cyan:#0aa6d7;--green:#24775b;--amber:#916b21;--red:#a54848}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink)}
+.app{max-width:540px;margin:0 auto;min-height:100vh;padding:calc(10px + env(safe-area-inset-top)) 12px calc(30px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:20;background:rgba(238,247,250,.94);backdrop-filter:blur(12px);padding:8px 0 10px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand b{font-size:17px;color:#173f78}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.badge{padding:5px 9px;border-radius:999px;background:#e7f7f0;color:var(--green);font-size:10px;font-weight:800;border:1px solid #cde7db}
+.progress{height:5px;background:#dce9ef;border-radius:99px;margin-top:9px;overflow:hidden}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),#3158a5);transition:.2s}
+.step{display:none}.step.active{display:block}
+.card{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 8px 26px rgba(34,75,98,.06)}
+h1,h2{margin:0;color:#173f78}h1{font-size:20px}h2{font-size:17px}.copy{font-size:12px;line-height:1.5;color:var(--muted);margin:6px 0 0}
+.note{margin-top:10px;padding:10px;border-radius:13px;background:#f2f8fb;border:1px solid #dbe9ef;font-size:11px;line-height:1.45;color:#5e7787}.note b{color:#28577e}
+.warn{background:#fff8e9;border-color:#ecd8a2;color:#83631e}.warn b{color:#876218}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.shot{border:1px solid #d6e5ed;background:#fbfeff;border-radius:15px;padding:9px;min-height:200px;display:flex;flex-direction:column}
+.shot.done{border-color:#bfe3d3;background:#f5fbf8}.shot.bad{border-color:#efc4c4;background:#fff8f8}
+.shot b{font-size:11px;color:#315879}.shot small{font-size:9px;color:#7c909b;margin-top:2px;line-height:1.35}
+.thumb{height:86px;background:#edf4f7;border-radius:11px;margin-top:7px;display:grid;place-items:center;overflow:hidden;color:#93a8b2;font-size:25px}.thumb img{width:100%;height:100%;object-fit:cover}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:7px}.chip{padding:4px;border-radius:8px;background:#edf3f6;color:#6b7f89;font-size:8px;font-weight:800;text-align:center}.chip.ok{background:#eaf7f1;color:var(--green)}.chip.warn{background:#fff7e7;color:var(--amber)}.chip.bad{background:#fff0f0;color:var(--red)}
+/* Native iPhone input remains directly tappable */
+.cameraInput{width:100%;font-size:0;margin-top:auto;padding-top:8px}
+.cameraInput::file-selector-button{width:100%;border:0;border-radius:11px;padding:11px 7px;background:#e8f6fc;color:#19658d;font-size:10px;font-weight:800}
+.shot.done .cameraInput::file-selector-button{background:#e7f7ef;color:var(--green)}.shot.bad .cameraInput::file-selector-button{background:#fff0f0;color:var(--red)}
+.actions{display:grid;gap:8px;margin-top:12px}.btn{min-height:48px;border-radius:14px;border:1px solid #ccdee7;background:#f8fcfe;color:#28618d;font-size:13px;font-weight:800}.btn.primary{background:linear-gradient(135deg,var(--cyan),#3158a5);border:0;color:#fff}.btn:disabled{opacity:.4}
+.choiceRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.choice{border:1px solid #d0e1e9;background:#fbfeff;border-radius:13px;padding:12px;font-weight:800;color:#315f82}.choice.sel{background:#eaf6ff;border-color:#8dbbd8;color:#155d8d}
+select{width:100%;margin-top:8px;padding:12px;border:1px solid #cfdfe7;border-radius:12px;background:#fff;color:#254d69;font-size:12px}
+.check{display:flex;gap:8px;margin-top:10px;font-size:11px;line-height:1.45;color:#607986}.check input{width:19px;height:19px}
+.status{margin-top:10px;padding:11px;border:1px solid #cde7db;background:#eef8f4;border-radius:13px;font-size:11px;line-height:1.5;color:var(--green)}.status.warn{border-color:#ead7a6;background:#fff8e9;color:var(--amber)}
+.log{margin-top:10px;background:#10222b;color:#bed5df;border-radius:13px;padding:10px;white-space:pre-wrap;max-height:180px;overflow:auto;font:9px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+.footer{font-size:9px;color:#83959f;text-align:center;line-height:1.45;margin-top:14px}
+@media(max-width:390px){.grid{grid-template-columns:1fr}.shot{min-height:190px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><div><b>Евразия · LIVE TEST</b><small>Реальный фотоосмотр на iPhone</small></div><span class="badge">КАМЕРА</span></div>
+    <div class="progress"><i id="bar"></i></div>
+  </div>
+
+  <section class="step active" data-step="0">
+    <div class="card">
+      <h1>Тест реального фотоосмотра</h1>
+      <p class="copy">Никаких демо-фото. Все снимки делаются камерой вашего iPhone.</p>
+      <div class="note"><b>Реально проверяем в браузере:</b> размер кадра, освещение, резкость и попытку повторно использовать почти одинаковый снимок.</div>
+      <div class="note warn"><b>Пока не называю это распознаванием повреждений.</b> Этот файл не содержит обученной модели кузовных дефектов. Для царапин/вмятин мы сначала соберем реальные тестовые фото и проверим, где нужна настоящая vision-модель.</div>
+      <div class="actions"><button id="start" class="btn primary">Начать тест</button></div>
+    </div>
+  </section>
+
+  <section class="step" data-step="1">
+    <div class="card">
+      <h2>1. Кузов — 4 ракурса</h2>
+      <p class="copy">На каждой карточке нажмите системную кнопку «Выбрать файл / Снять фото» и выберите камеру.</p>
+      <div id="angles" class="grid"></div>
+    </div>
+    <div class="actions"><button id="aNext" class="btn primary" disabled>Далее</button></div>
+  </section>
+
+  <section class="step" data-step="2">
+    <div class="card">
+      <h2>2. Контрольные фото</h2>
+      <p class="copy">VIN, госномер, одометр, салон и багажник.</p>
+      <div id="controls" class="grid"></div>
+    </div>
+    <div class="actions"><button class="btn back">Назад</button><button id="cNext" class="btn primary" disabled>Далее</button></div>
+  </section>
+
+  <section class="step" data-step="3">
+    <div class="card">
+      <h2>3. Повреждения</h2>
+      <p class="copy">Здесь специально попробуем и честный, и проблемный сценарий.</p>
+      <div class="choiceRow"><button id="noDamage" class="choice">Повреждений нет</button><button id="yesDamage" class="choice">Есть повреждение</button></div>
+      <div id="damageForm" style="display:none">
+        <select id="part"><option value="">Выберите деталь</option><option>Передний бампер</option><option>Задний бампер</option><option>Капот</option><option>Передняя левая дверь</option><option>Передняя правая дверь</option><option>Задняя левая дверь</option><option>Задняя правая дверь</option><option>Крыло</option><option>Стекло</option><option>Другое</option></select>
+        <select id="dtype"><option value="">Тип повреждения</option><option>Царапина / потертость</option><option>Скол</option><option>Вмятина</option><option>Трещина</option><option>Деформация</option><option>Другое</option></select>
+        <div id="damageShots" class="grid"></div>
+      </div>
+      <label class="check"><input id="confirm" type="checkbox"><span id="confirmText">Подтверждаю состояние автомобиля на момент осмотра</span></label>
+    </div>
+    <div class="actions"><button class="btn back">Назад</button><button id="dNext" class="btn primary" disabled>Завершить тест</button></div>
+  </section>
+
+  <section class="step" data-step="4">
+    <div class="card">
+      <h2>4. Результат</h2>
+      <div id="summary"></div>
+      <div class="note"><b>Что делать дальше:</b> откройте нужные тестовые фото в «Фото» и отправьте мне сюда. Сравним нормальный кадр, плохой кадр, реальное повреждение и попытку его скрыть.</div>
+      <div class="actions"><button id="restart" class="btn">Начать заново</button></div>
+      <div id="log" class="log"></div>
+    </div>
+  </section>
+
+  <div class="footer">Фотографии остаются на вашем устройстве и не загружаются в интернет этим HTML-файлом.</div>
+</div>
+<script>
+(function(){
+'use strict';
+var STEP=0;
+var S={angles:{},controls:{},damage:{choice:null,part:'',type:'',shots:{}},hashes:[],log:[]};
+var angleDefs=[['fl','Передняя левая · 45°'],['fr','Передняя правая · 45°'],['rr','Задняя правая · 45°'],['rl','Задняя левая · 45°']];
+var controlDefs=[['vin','VIN на автомобиле'],['plate','ГРНЗ на автомобиле'],['odo','Одометр'],['salon','Салон / мультимедиа'],['trunk','Багажник / допоборудование']];
+var damageDefs=[['general','Общий план повреждения'],['close','Крупный план повреждения']];
+function q(id){return document.getElementById(id)}
+function qa(sel){return Array.prototype.slice.call(document.querySelectorAll(sel))}
+function log(t,o){var line='['+new Date().toLocaleTimeString('ru-RU')+'] '+t+(o?' '+JSON.stringify(o):'');S.log.push(line);if(q('log'))q('log').textContent=S.log.join('\n')}
+function go(n){STEP=n;qa('.step').forEach(function(x){x.classList.toggle('active',Number(x.getAttribute('data-step'))===n)});q('bar').style.width=(n/4*100)+'%';window.scrollTo(0,0);if(n===4)renderSummary()}
+function build(container,defs,prefix){
+ var box=q(container);box.innerHTML='';
+ defs.forEach(function(def){
+   var id=def[0],title=def[1],wrap=document.createElement('div');wrap.className='shot';wrap.id='card_'+prefix+'_'+id;
+   wrap.innerHTML='<b>'+title+'</b><small>Реальный снимок с iPhone</small><div class="thumb" id="thumb_'+prefix+'_'+id+'">📷</div><div class="metrics" id="met_'+prefix+'_'+id+'"></div><input id="in_'+prefix+'_'+id+'" class="cameraInput" type="file" accept="image/*" capture="environment">';
+   box.appendChild(wrap);
+   q('in_'+prefix+'_'+id).addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(f)process(prefix,id,f);this.value=''});
+ });
+}
+function imageFromFile(file){
+ return new Promise(function(resolve,reject){
+   var r=new FileReader();
+   r.onload=function(){
+     var im=new Image();
+     im.onload=function(){resolve(im)};
+     im.onerror=function(){reject(new Error('iPhone/Safari не смог декодировать изображение'))};
+     im.src=r.result;
+   };
+   r.onerror=function(){reject(new Error('Не удалось прочитать файл'))};
+   r.readAsDataURL(file);
+ });
+}
+function ham(a,b){if(!a||!b||a.length!==b.length)return 99;var n=0;for(var i=0;i<a.length;i++)if(a.charAt(i)!==b.charAt(i))n++;return n}
+function analyze(file){
+ return imageFromFile(file).then(function(im){
+   var max=800,scale=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.max(1,Math.round(im.naturalWidth*scale)),h=Math.max(1,Math.round(im.naturalHeight*scale));
+   var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');x.drawImage(im,0,0,w,h);var d=x.getImageData(0,0,w,h).data;
+   var sum=0,sum2=0,n=0,dark=0,light=0,stride=Math.max(4,Math.floor((w*h)/80000))*4;
+   for(var i=0;i<d.length;i+=stride){var g=.299*d[i]+.587*d[i+1]+.114*d[i+2];sum+=g;sum2+=g*g;n++;if(g<18)dark++;if(g>238)light++}
+   var mean=sum/n,std=Math.sqrt(Math.max(0,sum2/n-mean*mean));
+   var sw=140,sh=Math.max(80,Math.round(sw*h/w)),sc=document.createElement('canvas');sc.width=sw;sc.height=sh;var sx=sc.getContext('2d');sx.drawImage(c,0,0,sw,sh);var sd=sx.getImageData(0,0,sw,sh).data;
+   function gr(idx){return .299*sd[idx]+.587*sd[idx+1]+.114*sd[idx+2]}
+   var lap=0,nl=0;
+   for(var yy=1;yy<sh-1;yy+=2)for(var xx=1;xx<sw-1;xx+=2){var j=(yy*sw+xx)*4,G=gr(j),L=gr(j-4),R=gr(j+4),U=gr(j-sw*4),D=gr(j+sw*4);lap+=Math.abs(4*G-L-R-U-D);nl++}
+   var sharp=lap/Math.max(1,nl);
+   var hc=document.createElement('canvas');hc.width=8;hc.height=8;var hx=hc.getContext('2d');hx.drawImage(c,0,0,w,h,0,0,8,8);var hd=hx.getImageData(0,0,8,8).data,vals=[];
+   for(var k=0;k<hd.length;k+=4)vals.push(.299*hd[k]+.587*hd[k+1]+.114*hd[k+2]);
+   var av=vals.reduce(function(a,b){return a+b},0)/vals.length,hash=vals.map(function(v){return v>=av?'1':'0'}).join('');
+   var duplicate=S.hashes.some(function(z){return ham(z,hash)<=4});
+   var m={w:im.naturalWidth,h:im.naturalHeight,mb:Math.round(file.size/10485.76)/100,brightness:Math.round(mean*10)/10,contrast:Math.round(std*10)/10,sharp:Math.round(sharp*10)/10,duplicate:duplicate,hash:hash};
+   m.ok={res:m.w>=1000&&m.h>=700,light:mean>=38&&mean<=220,sharp:sharp>=7.0,dup:!duplicate};
+   return {im:im,m:m};
+ });
+}
+function chip(t,ok,v,bad){return '<span class="chip '+(ok?'ok':(bad?'bad':'warn'))+'">'+t+': '+v+'</span>'}
+function chips(m){return chip('Размер',m.ok.res,m.w+'×'+m.h)+chip('Свет',m.ok.light,m.brightness)+chip('Резкость',m.ok.sharp,m.sharp,true)+chip('Дубликат',m.ok.dup,m.duplicate?'нет':'возможен',true)}
+function accepted(m){return m.ok.res&&m.ok.light&&m.ok.sharp&&m.ok.dup}
+function process(prefix,id,file){
+ var card=q('card_'+prefix+'_'+id),thumb=q('thumb_'+prefix+'_'+id),met=q('met_'+prefix+'_'+id);
+ thumb.textContent='Проверяем…';card.classList.remove('done','bad');
+ analyze(file).then(function(r){
+   var m=r.m;met.innerHTML=chips(m);
+   var rd=new FileReader();rd.onload=function(){thumb.innerHTML='<img alt="" src="'+rd.result+'">'};rd.readAsDataURL(file);
+   if(!accepted(m)){card.classList.add('bad');log('Кадр отклонен '+prefix+'/'+id,{brightness:m.brightness,sharp:m.sharp,duplicate:m.duplicate});return}
+   card.classList.add('done');S.hashes.push(m.hash);
+   var obj={file:file,m:m};if(prefix==='a')S.angles[id]=obj;if(prefix==='c')S.controls[id]=obj;if(prefix==='d')S.damage.shots[id]=obj;
+   log('Кадр принят '+prefix+'/'+id,{brightness:m.brightness,sharp:m.sharp});
+   update();
+ }).catch(function(e){card.classList.add('bad');thumb.textContent='Ошибка';met.innerHTML='<span class="chip bad">Не удалось обработать</span>';log('Ошибка фото '+prefix+'/'+id,{error:String(e)})});
+}
+function update(){
+ q('aNext').disabled=Object.keys(S.angles).length<4;
+ q('cNext').disabled=Object.keys(S.controls).length<5;
+ var ok=false;
+ if(S.damage.choice==='no')ok=q('confirm').checked;
+ if(S.damage.choice==='yes')ok=!!(S.damage.part&&S.damage.type&&Object.keys(S.damage.shots).length===2&&q('confirm').checked);
+ q('dNext').disabled=!ok;
+}
+function renderSummary(){
+ var all=Object.keys(S.angles).map(function(k){return S.angles[k]}).concat(Object.keys(S.controls).map(function(k){return S.controls[k]}),Object.keys(S.damage.shots).map(function(k){return S.damage.shots[k]}));
+ var avg=all.length?Math.round(all.reduce(function(s,x){return s+x.m.sharp},0)/all.length*10)/10:0;
+ q('summary').innerHTML='<div class="status">✓ Принято реальных кадров: <b>'+all.length+'</b><br>Средняя резкость: <b>'+avg+'</b><br>Принятых дубликатов: <b>0</b></div>'+
+   '<div class="status '+(S.damage.choice==='yes'?'warn':'')+'">'+(S.damage.choice==='yes'?'⚠ Клиент заявил: <b>'+S.damage.part+' · '+S.damage.type+'</b>':'✓ Клиент подтвердил отсутствие видимых повреждений')+'</div>';
+ log('Тест завершен',{frames:all.length,damage:S.damage.choice});
+}
+build('angles',angleDefs,'a');build('controls',controlDefs,'c');build('damageShots',damageDefs,'d');
+q('start').onclick=function(){go(1)};
+q('aNext').onclick=function(){go(2)};
+q('cNext').onclick=function(){go(3)};
+qa('.back').forEach(function(b){b.onclick=function(){go(Math.max(0,STEP-1))}});
+q('noDamage').onclick=function(){S.damage.choice='no';S.damage.shots={};q('noDamage').classList.add('sel');q('yesDamage').classList.remove('sel');q('damageForm').style.display='none';q('confirmText').textContent='Подтверждаю, что видимых повреждений автомобиля нет';update()};
+q('yesDamage').onclick=function(){S.damage.choice='yes';q('yesDamage').classList.add('sel');q('noDamage').classList.remove('sel');q('damageForm').style.display='block';q('confirmText').textContent='Подтверждаю, что указал(а) видимое повреждение';update()};
+q('part').onchange=function(){S.damage.part=this.value;update()};
+q('dtype').onchange=function(){S.damage.type=this.value;update()};
+q('confirm').onchange=update;
+q('dNext').onclick=function(){go(4)};
+q('restart').onclick=function(){location.reload()};
+log('LIVE TEST готов. Нажмите «Начать тест».');
+})();
+</script>
+</body>
+</html>
